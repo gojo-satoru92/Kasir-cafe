@@ -44,7 +44,7 @@ Setelah project Supabase dibuat dan skema sudah dijalankan, langkah nyata beriku
 
 ## Aturan operasional
 
-- Harga, pilihan ukuran/gula, status ketersediaan, pajak, dan biaya layanan dibaca dari database. Ubah menu melalui Supabase Table Editor. Tarif pajak/layanan diatur dalam basis poin di `cafe_settings` (contoh `1000` = 10%); nilai awal keduanya 0 agar aplikasi tidak mengasumsikan tarif kedai.
+- Harga, pilihan ukuran/gula, dan status ketersediaan menu dibaca dari database. Admin dapat menambah menu dan menonaktifkan atau mengaktifkan kembali menu melalui tab **Menu**; menu yang dinonaktifkan tetap disimpan agar riwayat transaksi terjaga. Tarif pajak/layanan diatur dalam basis poin di `cafe_settings` (contoh `1000` = 10%); nilai awal keduanya 0 agar aplikasi tidak mengasumsikan tarif kedai.
 - Pembuatan transaksi dan item pesanan dilakukan atomik di database; server menghitung ulang harga dan total. ID permintaan transaksi mencegah transaksi tercatat ganda saat browser mencoba ulang setelah koneksi terputus. Jika layar menyatakan hasil transaksi belum pasti, tekan **Coba lagi** dan jangan muat ulang/menutup tab sampai server menjawab.
 - Tunai ditandai lunas setelah jumlah uang diterima divalidasi. QRIS/EDC **belum terhubung ke payment gateway**: transaksi dicatat sebagai menunggu dan harus dikonfirmasi staf setelah dana benar-benar terlihat di aplikasi merchant atau mesin EDC.
 - Data tersinkron lewat Supabase; halaman memuat ulang data tiap 30 detik dan saat kembali aktif. Koneksi internet diperlukan untuk masuk dan membuat transaksi. Keranjang yang belum disimpan tetap berada di memori perangkat dan hilang jika halaman ditutup.
@@ -53,4 +53,4 @@ Setelah project Supabase dibuat dan skema sudah dijalankan, langkah nyata beriku
 
 ## Sebelum dipakai melayani pelanggan
 
-Uji login beberapa kasir, akses role, transaksi tunai (termasuk uang kurang/kembalian), pembayaran QRIS/EDC tertunda dan konfirmasi, retry saat koneksi terganggu, sinkronisasi antarkasir, laporan, serta cetak struk pada printer yang akan digunakan. Cocokkan tarif, label pajak/layanan, dan menu dengan kebijakan kedai. Integrasi payment gateway, dukungan offline, manajemen menu dari UI aplikasi, pembatalan/refund dengan audit, dan pengujian printer khusus belum termasuk.
+Uji login beberapa kasir, akses role, tambah/nonaktifkan menu, transaksi tunai (termasuk uang kurang/kembalian), pembayaran QRIS/EDC tertunda dan konfirmasi, retry saat koneksi terganggu, sinkronisasi antarkasir, laporan, serta cetak struk pada printer yang akan digunakan. Cocokkan tarif, label pajak/layanan, dan menu dengan kebijakan kedai. Integrasi payment gateway, dukungan offline, pembatalan/refund dengan audit, dan pengujian printer khusus belum termasuk.

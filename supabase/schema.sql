@@ -230,14 +230,14 @@ begin
     sale_id, menu_item_id, item_name, quantity, unit_price, variant, sugar, note
   )
   select sale_id_value,
-         item->>'menu_item_id',
-         item->>'item_name',
-         (item->>'quantity')::integer,
-         (item->>'unit_price')::integer,
-         item->>'variant',
-         item->>'sugar',
-         item->>'note'
-  from jsonb_array_elements(sale_items_value) as expanded(item);
+      expanded_item->>'menu_item_id',
+      expanded_item->>'item_name',
+      (expanded_item->>'quantity')::integer,
+      (expanded_item->>'unit_price')::integer,
+      expanded_item->>'variant',
+      expanded_item->>'sugar',
+      expanded_item->>'note'
+    from jsonb_array_elements(sale_items_value) as expanded(expanded_item);
 
   select coalesce(jsonb_agg(to_jsonb(si) - 'sale_id'), '[]'::jsonb)
     into sale_items_value from public.sale_items si where si.sale_id = sale_id_value;
@@ -288,6 +288,14 @@ alter table public.cafe_settings enable row level security;
 alter table public.menu_items enable row level security;
 alter table public.sales enable row level security;
 alter table public.sale_items enable row level security;
+
+drop policy if exists "Staff can read own profile" on public.staff_profiles;
+drop policy if exists "Staff can read settings" on public.cafe_settings;
+drop policy if exists "Staff can update settings" on public.cafe_settings;
+drop policy if exists "Staff can read menu" on public.menu_items;
+drop policy if exists "Admins can manage menu" on public.menu_items;
+drop policy if exists "Staff can read sales" on public.sales;
+drop policy if exists "Staff can read sale items" on public.sale_items;
 
 create policy "Staff can read own profile"
   on public.staff_profiles for select to authenticated
