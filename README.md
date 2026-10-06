@@ -49,7 +49,7 @@ Setelah project Supabase dibuat dan skema sudah dijalankan, langkah nyata beriku
 - Tunai ditandai lunas setelah jumlah uang diterima divalidasi. QRIS/EDC **belum terhubung ke payment gateway**: transaksi dicatat sebagai menunggu dan harus dikonfirmasi staf setelah dana benar-benar terlihat di aplikasi merchant atau mesin EDC.
 - Data tersinkron lewat Supabase; halaman memuat ulang data tiap 30 detik dan saat kembali aktif. Koneksi internet diperlukan untuk masuk dan membuat transaksi.
 - **Mode offline terbatas:** setelah aplikasi pernah dibuka online dan kasir sudah login, service worker menyimpan halaman/pustaka aplikasi dan katalog terakhir, sementara keranjang beserta catatan item disimpan di browser. Saat offline, kasir dapat mencari menu dan menyusun pesanan, tetapi checkout, laporan, dan manajemen menu tidak tersedia. Saat koneksi pulih, aplikasi memuat ulang harga, pilihan, serta ketersediaan; item yang sudah tidak tersedia atau pilihannya berubah akan dikeluarkan dari keranjang. Pastikan sinkronisasi berhasil sebelum menerima pembayaran. Gunakan HTTPS (atau localhost); data tersimpan hanya pada browser/perangkat yang sama.
-- Laporan harian menggunakan zona waktu perangkat kasir. Pastikan perangkat menggunakan zona waktu kedai.
+- Laporan dapat difilter per tanggal dan dicetak dari tab **Laporan**. Batas harinya mengikuti zona waktu perangkat kasir; pastikan perangkat menggunakan zona waktu kedai. Filter laporan memerlukan koneksi.
 - Kunci anon aman hanya jika RLS tetap aktif. Jangan nonaktifkan RLS atau memberi hak tulis publik. Batasi akses dashboard Supabase dan siapkan prosedur backup database.
 
 ## Sebelum dipakai melayani pelanggan
