@@ -35,7 +35,7 @@
   </style>
 </head>
 <body>
-  <header class="topbar"><div class="brand"><div class="mark"><i data-lucide="coffee"></i></div><div><div class="brand-name">kopi sore</div><div class="brand-caption">Kasir &amp; pesanan</div></div></div><nav class="nav" aria-label="Navigasi utama"><button class="active" data-view="cashier"><i data-lucide="layout-grid"></i>Kasir</button><button id="reportNav" data-view="reports"><i data-lucide="chart-no-axes-column-increasing"></i>Laporan</button></nav><div class="top-meta"><span class="dot"></span><span class="status" id="connectionStatus" aria-live="polite">Memeriksa koneksi…</span><span id="staffName" class="avatar">-</span><button id="signOut" class="signout hidden">Keluar</button></div></header>
+  <header class="topbar"><div class="brand"><div class="mark"><i data-lucide="coffee"></i></div><div><div class="brand-name">kopi Opa</div><div class="brand-caption">Kasir &amp; pesanan</div></div></div><nav class="nav" aria-label="Navigasi utama"><button class="active" data-view="cashier"><i data-lucide="layout-grid"></i>Kasir</button><button id="reportNav" data-view="reports"><i data-lucide="chart-no-axes-column-increasing"></i>Laporan</button></nav><div class="top-meta"><span class="dot"></span><span class="status" id="connectionStatus" aria-live="polite">Memeriksa koneksi…</span><span id="staffName" class="avatar">-</span><button id="signOut" class="signout hidden">Keluar</button></div></header>
   <section id="authGate" class="auth-gate" aria-labelledby="authTitle"><form id="authForm" class="auth-card"><div class="eyebrow">Kasir &amp; pesanan</div><h1 id="authTitle">Masuk ke Kopi Opa</h1><p id="authIntro">Gunakan akun staf yang telah dibuat pengelola.</p><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="username" required><label for="authPassword">Kata sandi</label><input id="authPassword" type="password" autocomplete="current-password" required><div id="authMessage" class="auth-message" role="alert"></div><button id="authSubmit" class="primary" type="submit">Masuk</button></form></section>
   <main id="cashierView" class="workspace hidden"><section class="catalog"><div class="catalog-head"><div><div class="eyebrow">Menu kedai</div><h1>Pesanan baru</h1><div id="todayDate" class="date"></div></div><label class="search"><i data-lucide="search"></i><input id="searchInput" type="search" placeholder="Cari menu..." aria-label="Cari menu"></label></div><div id="categories" class="categories" aria-label="Filter kategori"></div><div class="section-label"><strong>Daftar menu</strong><span id="menuCount"></span></div><div id="products" class="products"></div></section><aside id="cart" class="cart" aria-label="Keranjang"><div class="cart-head"><div class="cart-title">Pesanan</div><span id="count" class="count">0</span></div><div id="cartItems" class="cart-items"></div><div class="summary"><div class="sum-row"><span>Subtotal</span><strong id="subtotal">Rp0</strong></div><div class="sum-row"><span>Pajak</span><strong id="tax">Rp0</strong></div><div class="sum-row"><span>Biaya layanan</span><strong id="service">Rp0</strong></div><div class="sum-row total"><span>Total</span><strong id="total">Rp0</strong></div><button id="checkout" class="primary" disabled><i data-lucide="credit-card"></i>Lanjut pembayaran</button></div></aside></main>
   <main id="reportView" class="report hidden"><div class="report-head"><div><div class="eyebrow">Ringkasan kedai</div><h1>Laporan penjualan</h1></div><div class="report-controls"><label for="reportDateInput">Tanggal laporan</label><input id="reportDateInput" type="date" aria-label="Pilih tanggal laporan"><button id="printReport" class="secondary" type="button"><i data-lucide="printer"></i>Cetak laporan</button></div></div><div id="reportDate" class="report-date"></div><div class="stats"><section class="stat"><div class="stat-label">Omzet lunas</div><div id="revenue" class="stat-value">Rp0</div><div class="stat-foot">Total transaksi lunas</div></section><section class="stat"><div class="stat-label">Transaksi lunas</div><div id="transactionsCount" class="stat-value">0</div><div class="stat-foot">Pada tanggal terpilih</div></section><section class="stat"><div class="stat-label">Rata-rata transaksi</div><div id="average" class="stat-value">Rp0</div><div class="stat-foot">Transaksi lunas</div></section></div><div class="report-lower"><section class="report-section"><h2>Menu paling laku</h2><div id="topProducts"></div></section><section class="report-section"><h2>Transaksi</h2><div id="recent"></div></section></div></main>
@@ -175,7 +175,7 @@
         operationalDataFresh=false;
         if(!loadCachedOperationalData())throw error;
         console.error("Memakai katalog tersimpan karena sinkronisasi gagal:",error);
-        notify(navigator.onLine?"Koneksi ke server gagal. Katalog tersimpan hanya untuk membuat keranjang.":"Mode offline: katalog dan keranjang tersedia; pembayaran dinonaktifkan.");
+        notify(navigator.onLine?"Koneksi ke server gagal. Katalog tersimpan; transaksi online dinonaktifkan.":"Mode offline: tunai dapat dicatat lokal setelah antrean transaksi siap.");
       }
       setAdminMenuAccess(profile.role==="admin"&&operationalDataFresh);
       document.getElementById("staffName").textContent=profile.display_name.slice(0,2).toLocaleUpperCase("id-ID");
@@ -192,9 +192,141 @@
     }
     async function confirmSalePayment(saleId,showReceiptAfter=false){if(!window.confirm("Pastikan dana sudah terlihat di aplikasi merchant atau mesin EDC. Konfirmasi pembayaran diterima?"))return;try{const {error}=await db.rpc("confirm_sale_payment",{p_sale_id:saleId});if(error)throw error;const transaction=transactions.find(item=>item.uuid===saleId);if(transaction){transaction.status="paid";renderReports()}if(showReceiptAfter&&transaction)showReceipt(transaction);let refreshed=true;try{await refreshOperationalData()}catch(refreshError){refreshed=false;console.error("Pembayaran dikonfirmasi, tetapi penyegaran data gagal:",refreshError)}if(!showReceiptAfter)notify(refreshed?"Pembayaran dikonfirmasi dan transaksi tersimpan.":"Pembayaran dikonfirmasi; laporan akan tersinkron setelah koneksi pulih.");else if(!refreshed)notify("Pembayaran dikonfirmasi. Data laporan belum tersinkron; periksa koneksi.");}catch(error){console.error("Gagal mengonfirmasi pembayaran:",error);notify(`Konfirmasi gagal: ${error.message||"Periksa koneksi lalu coba lagi."}`)}}
     async function initialize(){icons();const config=window.KASIR_SUPABASE_CONFIG;if(!window.supabase?.createClient){document.getElementById("authForm").querySelectorAll("input,button").forEach(element=>element.disabled=true);showAuthGate("Pustaka Supabase gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.");return}if(!config?.url||!config?.anonKey){document.getElementById("authForm").querySelectorAll("input,button").forEach(element=>element.disabled=true);showAuthGate("Aplikasi belum dikonfigurasi. Isi URL proyek dan anon key di supabase-config.js, jalankan supabase/schema.sql, lalu buat akun staf.");return}try{db=window.supabase.createClient(config.url,config.anonKey);document.getElementById("authForm").addEventListener("submit",async event=>{event.preventDefault();const submit=document.getElementById("authSubmit");submit.disabled=true;authMessage("Memeriksa akun…");try{const {data,error}=await db.auth.signInWithPassword({email:document.getElementById("authEmail").value.trim(),password:document.getElementById("authPassword").value});if(error)throw error;await activateSession(data.session)}catch(error){console.error("Login gagal:",error);authMessage(error.message||"Tidak dapat masuk. Periksa akun dan koneksi.")}finally{submit.disabled=false}});document.getElementById("signOut").addEventListener("click",async()=>{const {error}=await db.auth.signOut();if(error){console.error("Logout gagal:",error);notify(`Tidak dapat keluar: ${error.message}`)}});db.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){staff=null;operationalDataFresh=false;cart.splice(0);localStorage.removeItem(offlineCartKey);transactions.splice(0);products=[];renderCart();if(refreshTimer)clearInterval(refreshTimer);showAuthGate("Sesi berakhir. Silakan masuk kembali.")}else if(event==="TOKEN_REFRESHED"&&session)queueMicrotask(()=>activateSession(session).catch(error=>{console.error("Gagal memuat data staf:",error);showAuthGate(error.message||"Gagal memuat data.")}))});const {data,error}=await db.auth.getSession();if(error)throw error;await activateSession(data.session);window.addEventListener("focus",()=>refreshOperationalData().catch(error=>{operationalDataFresh=false;updateConnectionStatus();console.error("Gagal memuat data terbaru:",error);notify("Gagal memuat data terbaru. Katalog tersimpan; pembayaran dinonaktifkan.")}))}catch(error){console.error("Inisialisasi aplikasi gagal:",error);document.getElementById("authForm").querySelectorAll("input,button").forEach(element=>element.disabled=true);showAuthGate(`Aplikasi gagal terhubung ke Supabase: ${error.message||"periksa konfigurasi dan skema database."}`)}}
+    let offlineSales=[],offlineSalesDbPromise=null,offlineSalesStorageReady=false,offlineCatalogReady=false,offlineSyncRunning=false,offlineUserId="";
+    const openOfflineSalesDb=()=>{if(!window.indexedDB)return Promise.reject(new Error("Penyimpanan offline tidak didukung browser ini."));if(!offlineSalesDbPromise)offlineSalesDbPromise=new Promise((resolve,reject)=>{const request=indexedDB.open("kasir-cafe-offline-sales",1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains("sales"))request.result.createObjectStore("sales",{keyPath:"requestId"})};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||new Error("Database transaksi offline gagal dibuka."))});return offlineSalesDbPromise};
+    const offlineStoreRequest=(mode,action,value)=>openOfflineSalesDb().then(database=>new Promise((resolve,reject)=>{const transaction=database.transaction("sales",mode),store=transaction.objectStore("sales"),request=action==="put"?store.put(value):action==="delete"?store.delete(value):store.getAll();let result;request.onsuccess=()=>{result=request.result};request.onerror=()=>reject(request.error||new Error("Transaksi penyimpanan offline gagal."));transaction.oncomplete=()=>resolve(result);transaction.onerror=()=>reject(transaction.error||new Error("Transaksi penyimpanan offline gagal."));transaction.onabort=()=>reject(transaction.error||new Error("Transaksi penyimpanan offline dibatalkan."))}));
+    const offlineQueueStatus=document.createElement("section");
+    offlineQueueStatus.id="offlineQueueStatus";
+    offlineQueueStatus.setAttribute("role","status");
+    offlineQueueStatus.setAttribute("aria-live","polite");
+    offlineQueueStatus.style.cssText="display:none;padding:11px 20px;background:#fff4df;border-bottom:1px solid #ead6aa;color:#604b20;font-size:12px;line-height:1.5";
+    document.querySelector(".topbar").after(offlineQueueStatus);
+    const originalUpdateConnectionStatus=updateConnectionStatus;
+    updateConnectionStatus=function(){originalUpdateConnectionStatus();const canUseCachedCatalog=staff&&offlineCatalogReady&&offlineSalesStorageReady,canCheckout=Boolean(cart.length&&staff&&!saleRequestId&&((navigator.onLine&&operationalDataFresh)||canUseCachedCatalog));document.getElementById("checkout").disabled=!canCheckout;if(staff&&!navigator.onLine&&canUseCachedCatalog)document.getElementById("connectionStatus").textContent="Offline · transaksi tunai tersedia";else if(staff&&navigator.onLine&&!operationalDataFresh&&canUseCachedCatalog)document.getElementById("connectionStatus").textContent="Server tidak tersambung · transaksi tunai lokal tersedia"};
+    const originalLoadCachedOperationalData=loadCachedOperationalData;
+    loadCachedOperationalData=function(){offlineCatalogReady=originalLoadCachedOperationalData();return offlineCatalogReady};
+    const originalRefreshOperationalData=refreshOperationalData;
+    refreshOperationalData=async function(){await originalRefreshOperationalData();try{const cached=JSON.parse(localStorage.getItem(offlineMenuKey)||"null");offlineCatalogReady=Boolean(cached&&JSON.stringify(cached.products)===JSON.stringify(products)&&cached.taxRateBps===taxRateBps&&cached.serviceRateBps===serviceRateBps)}catch(error){offlineCatalogReady=false;console.error("Katalog offline tidak dapat diperiksa:",error)}renderOfflineQueue()};
+    function renderOfflineQueue(){
+      const pending=offlineSales.filter(sale=>sale.status==="pending"),needsReview=offlineSales.filter(sale=>sale.status==="needs_review");
+      if(!offlineSales.length){offlineQueueStatus.style.display="none";updateConnectionStatus();return}
+      offlineQueueStatus.style.display="flex";offlineQueueStatus.style.alignItems="center";offlineQueueStatus.style.justifyContent="space-between";offlineQueueStatus.style.gap="12px";
+      const message=document.createElement("span");
+      const issue=needsReview[0]||pending.find(sale=>sale.syncError);
+      message.textContent=needsReview.length?`${needsReview.length} transaksi offline perlu pemeriksaan. ${needsReview[0].error||"Data menu atau harga berubah sebelum sinkronisasi."} Transaksi tetap tersimpan di perangkat.`:issue?`${pending.length} transaksi tunai menunggu sinkronisasi. Sinkronisasi terakhir gagal: ${issue.syncError} Transaksi tetap tersimpan di perangkat.`:`${pending.length} transaksi tunai tersimpan di perangkat dan menunggu sinkronisasi. Jangan hapus data browser sebelum sinkronisasi berhasil.`;
+      offlineQueueStatus.replaceChildren(message);
+      const viewButton=document.createElement("button");viewButton.type="button";viewButton.textContent="Lihat transaksi";viewButton.style.cssText="flex:none;padding:7px 11px;background:#fff;border:1px solid #d8c38d;border-radius:5px;color:#604b20;font:inherit;font-weight:700";viewButton.addEventListener("click",showOfflineSales);offlineQueueStatus.append(viewButton);
+      if(pending.length){const button=document.createElement("button");button.type="button";button.textContent=offlineSyncRunning?"Menyinkronkan…":"Sinkronkan";button.disabled=offlineSyncRunning||!navigator.onLine||!operationalDataFresh;button.style.cssText="flex:none;padding:7px 11px;background:#fff;border:1px solid #d8c38d;border-radius:5px;color:#604b20;font:inherit;font-weight:700";button.addEventListener("click",()=>syncOfflineSales());offlineQueueStatus.append(button)}
+      updateConnectionStatus();
+    }
+    function showOfflineSales(){
+      const rows=[...offlineSales].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(sale=>`<div class="transaction"><div><strong>${safe(sale.id)}</strong><span class="muted">${new Intl.DateTimeFormat("id-ID",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"}).format(new Date(sale.createdAt))} · ${money(sale.total)} · ${sale.status==="needs_review"?"Perlu diperiksa":"Menunggu sinkronisasi"}</span></div><button class="secondary" data-offline-receipt="${safe(sale.requestId)}">Lihat / cetak struk</button></div>`).join("");
+      document.getElementById("modal").innerHTML=`<div class="overlay" data-dismiss><section class="modal" role="dialog" aria-modal="true"><div class="modal-head"><div><div class="modal-title">Transaksi offline</div><div class="modal-sub">Belum seluruhnya tersimpan di database</div></div><button class="close" data-close aria-label="Tutup"><i data-lucide="x"></i></button></div><div class="modal-body">${rows||'<div class="empty-report">Tidak ada transaksi offline.</div>'}</div></section></div>`;
+      document.querySelectorAll("[data-offline-receipt]").forEach(button=>button.addEventListener("click",()=>{const sale=offlineSales.find(item=>item.requestId===button.dataset.offlineReceipt);if(sale)showReceipt({...sale,uuid:sale.requestId,date:new Date(sale.createdAt),service:sale.service,status:"offline_sync",items:sale.items.map(item=>({name:item.name,quantity:item.quantity,price:item.expected_unit_price,variant:item.variant,sugar:item.sugar,note:item.note}))})}));
+      icons();
+    }
+    async function loadOfflineSales(){
+      offlineSales=await offlineStoreRequest("readonly","getAll");
+      offlineSalesStorageReady=true;
+      renderOfflineQueue();
+    }
+    const isOfflineSaleConflict=error=>error?.code==="P0001"||error?.code==="42501"||String(error?.code||"").startsWith("22");
+    async function syncOfflineSales(){
+      if(offlineSyncRunning||!offlineSalesStorageReady||!navigator.onLine||!operationalDataFresh||!db||!staff)return;
+      const queued=offlineSales.filter(sale=>sale.status==="pending").sort((a,b)=>a.createdAt.localeCompare(b.createdAt));
+      if(!queued.length)return;
+      offlineSyncRunning=true;renderOfflineQueue();let synced=0;
+      try{
+        for(const sale of queued){
+          try{
+            if(sale.cashierId&&sale.cashierId!==offlineUserId){sale.status="needs_review";sale.error="Masuk kembali dengan akun kasir yang membuat transaksi ini.";await offlineStoreRequest("readwrite","put",sale);offlineSales=offlineSales.map(item=>item.requestId===sale.requestId?sale:item);break}
+            const items=sale.items.map(item=>({menu_item_id:item.menu_item_id,quantity:item.quantity,variant:item.variant,sugar:item.sugar,note:item.note,expected_unit_price:item.expected_unit_price,expected_item_name:item.name}));
+            const result=await db.rpc("create_sale",{p_items:items,p_payment_method:"Tunai",p_request_id:sale.requestId,p_cash_received:sale.cashReceived,p_offline_snapshot:{subtotal:sale.subtotal,tax:sale.tax,service_charge:sale.service,total:sale.total,created_at:sale.createdAt}});
+            if(result.error)throw result.error;
+            await offlineStoreRequest("readwrite","delete",sale.requestId);
+            offlineSales=offlineSales.filter(item=>item.requestId!==sale.requestId);synced++;
+          }catch(error){
+            console.error("Transaksi offline belum dapat disinkronkan:",error);
+            if(isOfflineSaleConflict(error)){sale.status="needs_review";sale.error=error.message||"Menu, harga, pajak, atau hak akses berubah."}
+            else sale.syncError=error.message||"Periksa koneksi lalu coba sinkronkan kembali.";
+            try{await offlineStoreRequest("readwrite","put",sale)}catch(storageError){console.error("Status kegagalan sinkronisasi tidak dapat disimpan:",storageError)}
+            offlineSales=offlineSales.map(item=>item.requestId===sale.requestId?sale:item);
+            break;
+          }
+        }
+        if(synced){try{await originalRefreshOperationalData()}catch(error){console.error("Transaksi offline tersimpan, tetapi data terbaru gagal dimuat:",error)}}
+      }finally{offlineSyncRunning=false;renderOfflineQueue()}
+      if(synced)notify(`${synced} transaksi tunai offline berhasil disinkronkan.`);
+    }
+    const originalCheckoutDialog=checkoutDialog;
+    checkoutDialog=function(){
+      const offlineMode=!navigator.onLine||!operationalDataFresh;
+      if(!offlineMode)return originalCheckoutDialog();
+      if(!offlineCatalogReady||!offlineSalesStorageReady){notify("Transaksi offline belum siap. Sambungkan internet dan pastikan katalog tersimpan terlebih dahulu.");return}
+      payment="Tunai";const t=totals(),cashOptions=[Math.ceil(t.total/10000)*10000,Math.ceil(t.total/50000)*50000,Math.ceil(t.total/100000)*100000];
+      document.getElementById("modal").innerHTML=`<div class="overlay" data-dismiss><section class="modal" role="dialog" aria-modal="true"><div class="modal-head"><div><div class="modal-title">Pembayaran tunai offline</div><div class="modal-sub">Transaksi disimpan di perangkat dan disinkronkan saat online</div></div><button class="close" data-close aria-label="Tutup"><i data-lucide="x"></i></button></div><div class="modal-body"><div class="checkout-total"><span>Total tagihan</span><strong>${money(t.total)}</strong></div><div class="cash-area"><label class="label" for="cashReceived">Uang diterima</label><input id="cashReceived" class="field" type="number" min="${t.total}" step="1000" placeholder="Masukkan nominal" inputmode="numeric"><div class="quick">${cashOptions.map(n=>`<button data-cash="${n}">${money(n)}</button>`).join("")}</div><div class="change"><span>Kembalian</span><strong id="change">Rp0</strong></div></div></div><div class="modal-foot"><button id="complete" class="primary"><i data-lucide="check"></i>Simpan transaksi tunai</button></div></section></div>`;icons();updateChange();
+    };
+    const originalFinishPayment=finishPayment;
+    finishPayment=async function(){
+      if(navigator.onLine&&operationalDataFresh)return originalFinishPayment();
+      if(payment!=="Tunai"){notify("Saat offline, hanya transaksi tunai yang dapat dicatat.");return}
+      if(!offlineCatalogReady||!offlineSalesStorageReady){notify("Transaksi offline belum siap. Sambungkan internet dan pastikan katalog tersimpan terlebih dahulu.");return}
+      const button=document.getElementById("complete"),amount=Number(document.getElementById("cashReceived")?.value),amounts=totals();
+      if(!Number.isSafeInteger(amount)||amount<amounts.total){notify("Nominal tunai harus mencukupi total tagihan.");return}
+      if(!crypto.randomUUID){notify("Browser tidak mendukung ID transaksi aman. Gunakan browser terbaru melalui HTTPS.");return}
+      const requestId=saleRequestId||crypto.randomUUID(),createdAt=new Date().toISOString(),sale={requestId,createdAt,status:"pending",id:`OFF-${createdAt.replace(/[-:.TZ]/g,"").slice(0,14)}-${requestId.slice(0,6).toUpperCase()}`,cashier:staff.display_name,cashierId:offlineUserId,method:"Tunai",cashReceived:amount,change:amount-amounts.total,...amounts,items:cart.map(item=>({menu_item_id:item.id,name:item.name,quantity:item.quantity,expected_unit_price:item.price,variant:item.variant,sugar:item.sugar,note:item.note}))};
+      button.disabled=true;button.textContent="Menyimpan di perangkat…";
+      try{await offlineStoreRequest("readwrite","put",sale);offlineSales.push(sale);saleRequestId="";cart.splice(0);renderCart();renderOfflineQueue();closeModal();showReceipt({...sale,uuid:requestId,date:new Date(createdAt),service:sale.service,status:"offline_sync",items:sale.items.map(item=>({name:item.name,quantity:item.quantity,price:item.expected_unit_price,variant:item.variant,sugar:item.sugar,note:item.note}))})}
+      catch(error){console.error("Transaksi offline gagal disimpan:",error);button.disabled=false;button.innerHTML='<i data-lucide="check"></i>Coba lagi';icons();notify(`Transaksi belum tersimpan. Jangan serahkan struk sebagai bukti transaksi: ${error.message||"penyimpanan perangkat gagal."}`)}
+    };
+    const originalShowReceipt=showReceipt;
+    showReceipt=function(t){
+      if(t.status!=="offline_sync")return originalShowReceipt(t);
+      currentReceipt=t;const lines=t.items.map(item=>`<div class="receipt-line"><span>${item.quantity}x ${safe(item.name)} (${safe(item.variant)})</span><span>${money(item.price*item.quantity)}</span></div>`).join("");
+      document.getElementById("modal").innerHTML=`<div class="overlay"><section class="modal" role="dialog" aria-modal="true"><div id="receiptPrint"><div class="receipt"><div class="receipt-icon"><i data-lucide="cloud-upload"></i></div><h2>Transaksi tersimpan offline</h2><p>Tunai sudah dicatat di perangkat ini, tetapi belum masuk ke database. Simpan struk dan sambungkan internet untuk sinkronisasi.</p><div class="receipt-details">${lines}<div class="receipt-line"><span>Subtotal</span><span>${money(t.subtotal)}</span></div><div class="receipt-line"><span>Pajak</span><span>${money(t.tax)}</span></div><div class="receipt-line"><span>Layanan</span><span>${money(t.service)}</span></div><div class="receipt-line total"><span>Total · Tunai</span><span>${money(t.total)}</span></div><div class="receipt-line"><span>Tunai diterima / kembalian</span><span>${money(t.cashReceived)} / ${money(t.change)}</span></div></div><div class="receipt-number">${safe(t.id)} · ${new Intl.DateTimeFormat("id-ID",{hour:"2-digit",minute:"2-digit",day:"numeric",month:"short"}).format(t.date)}</div></div></div><div class="receipt-actions"><button class="secondary" id="shareReceipt"><i data-lucide="share-2"></i>Kirim digital</button><button class="secondary" id="print"><i data-lucide="printer"></i>Cetak struk</button><button class="primary" id="finishReceipt">Selesai</button></div></section></div>`;icons();
+    };
+    const originalActivateSession=activateSession;
+    activateSession=async function(session){
+      offlineUserId=session?.user?.id||"";
+      await originalActivateSession(session);
+      if(!staff)return;
+      try{await loadOfflineSales();if(operationalDataFresh)await syncOfflineSales()}
+      catch(error){offlineSalesStorageReady=false;console.error("Antrean transaksi offline tidak dapat dimuat:",error);notify("Transaksi offline dinonaktifkan karena penyimpanan lokal tidak dapat dibuka.")}
+      updateConnectionStatus();
+    };
+    async function activateCachedOfflineSession(){
+      let profile;
+      try{const cached=JSON.parse(localStorage.getItem(offlineStaffKey)||"null");profile=cached?.user_id?cachedStaff(cached.user_id):null}
+      catch(error){console.error("Profil kasir offline tidak dapat dipulihkan:",error);return false}
+      if(!profile||!loadCachedOperationalData())return false;
+      staff=profile;offlineUserId=profile.user_id;operationalDataFresh=false;setAdminMenuAccess(false);
+      document.getElementById("authForm").querySelectorAll("input,button").forEach(element=>element.disabled=false);
+      document.getElementById("authGate").classList.add("hidden");
+      document.getElementById("cashierView").classList.remove("hidden");
+      document.getElementById("reportView").classList.add("hidden");
+      document.getElementById("menuManagementView").classList.add("hidden");
+      document.getElementById("mobileCart").classList.remove("hidden");
+      document.getElementById("signOut").classList.remove("hidden");
+      document.getElementById("staffName").textContent=profile.display_name.slice(0,2).toLocaleUpperCase("id-ID");
+      document.querySelectorAll(".nav button").forEach(button=>button.classList.toggle("active",button.dataset.view==="cashier"));
+      try{await loadOfflineSales()}catch(error){offlineSalesStorageReady=false;console.error("Antrean transaksi offline tidak dapat dimuat:",error);notify("Transaksi offline tidak tersedia karena penyimpanan lokal gagal dibuka.")}
+      updateConnectionStatus();renderCart();setMobileCart(false);
+      return true;
+    }
+    const originalInitialize=initialize;
+    initialize=async function(){
+      await originalInitialize();
+      if(db)db.auth.onAuthStateChange(event=>{if(event==="SIGNED_OUT"){try{localStorage.removeItem(offlineStaffKey)}catch(error){console.error("Profil offline tidak dapat dihapus setelah keluar:",error)}}});
+      if(!staff&&!navigator.onLine&&db)await activateCachedOfflineSession();
+    };
+    document.getElementById("signOut").addEventListener("click",()=>{
+      if(navigator.onLine)return;
+      try{localStorage.removeItem(offlineStaffKey)}catch(error){console.error("Profil offline tidak dapat dihapus:",error)}
+      staff=null;offlineUserId="";operationalDataFresh=false;cart.splice(0);renderCart();showAuthGate("Anda keluar dari kasir. Login kembali memerlukan koneksi internet.");
+    });
     document.getElementById("todayDate").textContent=dateText;document.getElementById("reportDate").textContent=dateText;restoreCart();renderCart();renderReports();updateConnectionStatus();initialize();
-    window.addEventListener("offline",()=>{operationalDataFresh=false;updateConnectionStatus();notify("Mode offline: katalog dan keranjang tetap tersedia. Pembayaran dinonaktifkan.")});
-    window.addEventListener("online",async()=>{operationalDataFresh=false;updateConnectionStatus();if(!db||!staff)return;try{const {data,error}=await db.auth.getSession();if(error)throw error;await activateSession(data.session)}catch(error){console.error("Gagal menyambungkan kembali:",error);loadCachedOperationalData();updateConnectionStatus();notify("Belum dapat tersambung ke server. Katalog tersimpan; pembayaran tetap dinonaktifkan.")}});
+    window.addEventListener("offline",()=>{operationalDataFresh=false;updateConnectionStatus();notify(offlineCatalogReady&&offlineSalesStorageReady?"Mode offline: pembayaran tunai tersimpan lokal; QRIS/EDC dan laporan tidak tersedia.":"Mode offline: katalog tersedia, tetapi transaksi belum siap karena penyimpanan lokal belum siap.")});
+    window.addEventListener("online",async()=>{operationalDataFresh=false;updateConnectionStatus();if(!db||!staff)return;try{const {data,error}=await db.auth.getSession();if(error)throw error;await activateSession(data.session)}catch(error){console.error("Gagal menyambungkan kembali:",error);loadCachedOperationalData();updateConnectionStatus();notify("Belum dapat tersambung ke server. Transaksi tunai dapat disimpan lokal; sinkronisasi menunggu koneksi.")}});
     if("serviceWorker" in navigator)navigator.serviceWorker.register("./service-worker.js").catch(error=>console.error("Service worker gagal didaftarkan:",error));
     const cartClose=document.createElement("button");cartClose.className="cart-close";cartClose.id="closeCart";cartClose.setAttribute("aria-label","Tutup keranjang");cartClose.innerHTML='<i data-lucide="x"></i>';document.querySelector(".cart-head").append(cartClose);icons();setMobileCart(false);window.matchMedia("(max-width: 800px)").addEventListener("change",()=>setMobileCart(false));
     document.addEventListener("click",event=>{
